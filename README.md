@@ -1,4 +1,3 @@
-# P-P3
 # Project Overview
 
 This project will use the [Spotify Web API](https://developer.spotify.com/documentation/web-api/). You will be able to find your favorite artist, albums, and songs using this App. This project will also display authorization techniques to keep sensitive information secure.
