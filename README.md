@@ -8,6 +8,8 @@ This project will use the [Spotify Web API](https://developer.spotify.com/docume
 - NPM
 - MongoDB
 - Chrome or equivelant
+- Express
+- bcrypt
 
 ## Considerations
 
