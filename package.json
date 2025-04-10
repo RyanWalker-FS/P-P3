@@ -1,0 +1,28 @@
+{
+  "name": "p-p3",
+  "version": "1.0.0",
+  "description": "This project will use the [Spotify Web API](https://developer.spotify.com/documentation/web-api/). You will be able to find your favorite artist, albums, and songs using this App. This project will also display authorization techniques to keep sensitive information secure.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start":"nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyanWalker-FS/P-P3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RyanWalker-FS/P-P3/issues"
+  },
+  "homepage": "https://github.com/RyanWalker-FS/P-P3#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "mongoose": "^8.13.2",
+    "nodemon": "^3.1.9"
+  }
+}
