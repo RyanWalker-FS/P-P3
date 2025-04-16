@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      :root {
+        --spotify-green: #1db954;
+        --spotify-black: #121212;
+        --spotify-dark-gray: #181818;
+        --spotify-gray: #282828;
+        --spotify-light-gray: #b3b3b3;
+        --spotify-white: #ffffff;
+      }
+
+      body {
+        background-color: var(--spotify-black);
+        color: var(--spotify-white);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      }
+
+      .sidebar {
+        background-color: var(--spotify-black);
+        width: 232px;
+        height: 100vh;
+        position: fixed;
+        padding: 24px 10px;
+      }
+
+      .main-content {
+        margin-left: 232px;
+        padding: 0 32px;
+        background: linear-gradient(
+          to bottom,
+          var(--spotify-gray) 0%,
+          var(--spotify-black) 100%
+        );
+        min-height: 100vh;
+      }
+
+      .nav-item {
+        color: var(--spotify-light-gray);
+        padding: 8px 16px;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .nav-item:hover {
+        color: var(--spotify-white);
+        background-color: var(--spotify-gray);
+      }
+
+      .nav-item.active {
+        color: var(--spotify-white);
+        background-color: var(--spotify-gray);
+      }
+
+      .card {
+        background-color: var(--spotify-dark-gray);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.3s;
+      }
+
+      .card:hover {
+        background-color: var(--spotify-gray);
+        transform: translateY(-5px);
+      }
+
+      .play-button {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background-color: var(--spotify-black);
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: all 0.3s;
+      }
+
+      .card:hover .play-button {
+        opacity: 1;
+        transform: translateY(-8px);
+      }
+
+      .search-bar {
+        background-color: var(--spotify-white);
+        border-radius: 20px;
+        padding: 8px 16px;
+        width: 300px;
+      }
+
+      .search-bar input {
+        border: none;
+        background: none;
+        width: 100%;
+        color: var(--spotify-black);
+      }
+
+      .search-bar input:focus {
+        outline: none;
+      }
+
+      .collapsed {
+        max-height: 0 !important;
+        overflow: hidden;
+      }
+
+      #topTracksSectionContent,
+      #topArtistsSectionContent,
+      #playlistsSectionContent,
+      #searchSectionContent {
+        transition: max-height 0.3s ease-out;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="mb-8">
+        <img
+          src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+          alt="Spotify Logo"
+          class="w-32 mb-8"
+        />
+      </div>
+      <div class="space-y-2">
+        <a href="#" class="nav-item active flex items-center">
+          <i class="fas fa-home mr-4"></i>
+          <span>Home</span>
+        </a>
+        <a href="#" class="nav-item flex items-center">
+          <i class="fas fa-search mr-4"></i>
+          <span>Search</span>
+        </a>
+        <a href="#" class="nav-item flex items-center">
+          <i class="fas fa-book mr-4"></i>
+          <span>Your Library</span>
+        </a>
+      </div>
+      <div class="mt-8 space-y-2">
+        <a href="#" class="nav-item flex items-center">
+          <i class="fas fa-plus-square mr-4"></i>
+          <span>Create Playlist</span>
+        </a>
+        <a href="#" class="nav-item flex items-center">
+          <i class="fas fa-heart mr-4"></i>
+          <span>Liked Songs</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Top Bar -->
+      <div class="flex justify-between items-center py-4">
+        <div class="search-bar flex items-center">
+          <i class="fas fa-search text-gray-500"></i>
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search for tracks..."
+            class="ml-2"
+          />
+        </div>
+        <div class="flex items-center space-x-4">
+          <div id="userInfo" class="flex items-center space-x-3 hidden">
+            <img
+              id="userImage"
+              src=""
+              alt="Profile"
+              class="w-8 h-8 rounded-full object-cover"
+            />
+            <span id="userName" class="font-medium"></span>
+            <button
+              id="logoutBtn"
+              class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg"
+            >
+              <i class="fas fa-sign-out-alt mr-2"></i>Logout
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Sections -->
+      <div class="space-y-8">
+        <!-- Search Results -->
+        <section id="searchSection" class="hidden">
+          <div
+            class="flex justify-between items-center mb-4 cursor-pointer"
+            onclick="toggleSection('searchSection')"
+          >
+            <h2 class="text-2xl font-bold">Search Results</h2>
+            <i
+              class="fas fa-chevron-down transition-transform duration-300"
+              id="searchSectionIcon"
+            ></i>
+          </div>
+          <div
+            id="searchSectionContent"
+            class="overflow-hidden transition-all duration-300"
+          >
+            <div
+              id="searchResults"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ></div>
+          </div>
+        </section>
+
+        <!-- Top Tracks -->
+        <section>
+          <div
+            class="flex justify-between items-center mb-4 cursor-pointer"
+            onclick="toggleSection('topTracksSection')"
+          >
+            <h2 class="text-2xl font-bold">Your Top Tracks</h2>
+            <div class="flex items-center space-x-4">
+              <button
+                id="loadTopTracks"
+                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+              >
+                <i class="fas fa-sync-alt mr-2"></i>Load Top Tracks
+              </button>
+              <i
+                class="fas fa-chevron-down transition-transform duration-300"
+                id="topTracksSectionIcon"
+              ></i>
+            </div>
+          </div>
+          <div
+            id="topTracksSectionContent"
+            class="overflow-hidden transition-all duration-300"
+          >
+            <div
+              id="topTracks"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ></div>
+          </div>
+        </section>
+
+        <!-- Top Artists -->
+        <section>
+          <div
+            class="flex justify-between items-center mb-4 cursor-pointer"
+            onclick="toggleSection('topArtistsSection')"
+          >
+            <h2 class="text-2xl font-bold">Your Top Artists</h2>
+            <div class="flex items-center space-x-4">
+              <button
+                id="loadTopArtists"
+                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+              >
+                <i class="fas fa-sync-alt mr-2"></i>Load Top Artists
+              </button>
+              <i
+                class="fas fa-chevron-down transition-transform duration-300"
+                id="topArtistsSectionIcon"
+              ></i>
+            </div>
+          </div>
+          <div
+            id="topArtistsSectionContent"
+            class="overflow-hidden transition-all duration-300"
+          >
+            <div
+              id="topArtists"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ></div>
+          </div>
+        </section>
+
+        <!-- Playlists -->
+        <section>
+          <div
+            class="flex justify-between items-center mb-4 cursor-pointer"
+            onclick="toggleSection('playlistsSection')"
+          >
+            <h2 class="text-2xl font-bold">Your Playlists</h2>
+            <div class="flex items-center space-x-4">
+              <button
+                id="loadPlaylists"
+                class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg"
+              >
+                <i class="fas fa-sync-alt mr-2"></i>Load Playlists
+              </button>
+              <i
+                class="fas fa-chevron-down transition-transform duration-300"
+                id="playlistsSectionIcon"
+              ></i>
+            </div>
+          </div>
+          <div
+            id="playlistsSectionContent"
+            class="overflow-hidden transition-all duration-300"
+          >
+            <div
+              id="playlists"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ></div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // Utility functions
+      const getImageUrl = (images) => {
+        if (!images || images.length === 0)
+          return "https://via.placeholder.com/150";
+        return images[0].url;
+      };
+
+      const formatDuration = (ms) => {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = ((ms % 60000) / 1000).toFixed(0);
+        return `${minutes}:${seconds.padStart(2, "0")}`;
+      };
+
+      // API functions
+      const fetchWithAuth = async (url) => {
+        try {
+          const response = await fetch(url, {
+            credentials: "include",
+          });
+          if (!response.ok) {
+            if (response.status === 401) {
+              // Try to refresh token
+              await fetch("/auth/refresh", { credentials: "include" });
+              // Retry the original request
+              return fetchWithAuth(url);
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return await response.json();
+        } catch (error) {
+          console.error("Error:", error);
+          throw error;
+        }
+      };
+
+      // User Info
+      const loadUserInfo = async () => {
+        try {
+          const data = await fetchWithAuth("/api/me");
+          document.getElementById("userName").textContent = data.display_name;
+          if (data.images && data.images.length > 0) {
+            document.getElementById("userImage").src = data.images[0].url;
+          } else {
+            document.getElementById("userImage").src =
+              "https://via.placeholder.com/32";
+          }
+          document.getElementById("userInfo").classList.remove("hidden");
+        } catch (error) {
+          console.error("Error loading user info:", error);
+        }
+      };
+
+      // Search
+      document
+        .getElementById("searchInput")
+        .addEventListener("input", async (e) => {
+          const query = e.target.value;
+          if (!query) {
+            document.getElementById("searchSection").classList.add("hidden");
+            return;
+          }
+
+          const resultsDiv = document.getElementById("searchResults");
+          resultsDiv.innerHTML =
+            "<div class='col-span-full text-center'>Loading...</div>";
+          document.getElementById("searchSection").classList.remove("hidden");
+
+          try {
+            const data = await fetchWithAuth(
+              `/api/search?q=${encodeURIComponent(query)}`
+            );
+            resultsDiv.innerHTML = data.tracks.items
+              .map(
+                (track) => `
+            <div class="card relative">
+              <img src="${getImageUrl(track.album.images)}" alt="${track.name}" 
+                   class="w-full aspect-square object-cover rounded-lg mb-4">
+              <div class="play-button">
+                <i class="fas fa-play text-white"></i>
+              </div>
+              <h3 class="font-semibold mb-1">${track.name}</h3>
+              <p class="text-gray-400 text-sm">${track.artists
+                .map((a) => a.name)
+                .join(", ")}</p>
+              <p class="text-gray-500 text-xs mt-1">${formatDuration(
+                track.duration_ms
+              )}</p>
+            </div>
+          `
+              )
+              .join("");
+          } catch (error) {
+            resultsDiv.innerHTML =
+              "<div class='col-span-full text-center text-red-500'>Error loading results</div>";
+          }
+        });
+
+      // Top Tracks
+      document
+        .getElementById("loadTopTracks")
+        .addEventListener("click", async () => {
+          const tracksDiv = document.getElementById("topTracks");
+          tracksDiv.innerHTML =
+            "<div class='col-span-full text-center'>Loading...</div>";
+
+          try {
+            const data = await fetchWithAuth("/api/top/tracks");
+            tracksDiv.innerHTML = data.items
+              .map(
+                (track) => `
+            <div class="card relative">
+              <img src="${getImageUrl(track.album.images)}" alt="${track.name}" 
+                   class="w-full aspect-square object-cover rounded-lg mb-4">
+              <div class="play-button">
+                <i class="fas fa-play text-white"></i>
+              </div>
+              <h3 class="font-semibold mb-1">${track.name}</h3>
+              <p class="text-gray-400 text-sm">${track.artists
+                .map((a) => a.name)
+                .join(", ")}</p>
+              <p class="text-gray-500 text-xs mt-1">${formatDuration(
+                track.duration_ms
+              )}</p>
+            </div>
+          `
+              )
+              .join("");
+          } catch (error) {
+            tracksDiv.innerHTML =
+              "<div class='col-span-full text-center text-red-500'>Error loading top tracks</div>";
+          }
+        });
+
+      // Top Artists
+      document
+        .getElementById("loadTopArtists")
+        .addEventListener("click", async () => {
+          const artistsDiv = document.getElementById("topArtists");
+          artistsDiv.innerHTML =
+            "<div class='col-span-full text-center'>Loading...</div>";
+
+          try {
+            const data = await fetchWithAuth("/api/top/artists");
+            artistsDiv.innerHTML = data.items
+              .map(
+                (artist) => `
+            <div class="card relative">
+              <img src="${getImageUrl(artist.images)}" alt="${artist.name}" 
+                   class="w-full aspect-square object-cover rounded-lg mb-4">
+              <div class="play-button">
+                <i class="fas fa-play text-white"></i>
+              </div>
+              <h3 class="font-semibold mb-1">${artist.name}</h3>
+              <p class="text-gray-400 text-sm">${artist.genres.join(", ")}</p>
+            </div>
+          `
+              )
+              .join("");
+          } catch (error) {
+            artistsDiv.innerHTML =
+              "<div class='col-span-full text-center text-red-500'>Error loading top artists</div>";
+          }
+        });
+
+      // Playlists
+      document
+        .getElementById("loadPlaylists")
+        .addEventListener("click", async () => {
+          const playlistsDiv = document.getElementById("playlists");
+          playlistsDiv.innerHTML =
+            "<div class='col-span-full text-center'>Loading...</div>";
+
+          try {
+            const data = await fetchWithAuth("/api/playlists");
+            playlistsDiv.innerHTML = data.items
+              .map(
+                (playlist) => `
+            <div class="card relative">
+              <img src="${getImageUrl(playlist.images)}" alt="${playlist.name}" 
+                   class="w-full aspect-square object-cover rounded-lg mb-4">
+              <div class="play-button">
+                <i class="fas fa-play text-white"></i>
+              </div>
+              <h3 class="font-semibold mb-1">${playlist.name}</h3>
+              <p class="text-gray-400 text-sm">${
+                playlist.tracks.total
+              } tracks</p>
+              <p class="text-gray-500 text-xs mt-1">By ${
+                playlist.owner.display_name
+              }</p>
+            </div>
+          `
+              )
+              .join("");
+          } catch (error) {
+            playlistsDiv.innerHTML =
+              "<div class='col-span-full text-center text-red-500'>Error loading playlists</div>";
+          }
+        });
+
+      // Logout
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        // Clear cookies
+        document.cookie =
+          "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie =
+          "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        // Redirect to home page
+        window.location.href = "/";
+      });
+
+      // Check auth status and load user info on page load
+      const checkAuthStatus = async () => {
+        try {
+          const response = await fetch("/api/auth-status", {
+            credentials: "include",
+          });
+          if (response.ok) {
+            loadUserInfo();
+          } else {
+            window.location.href = "/";
+          }
+        } catch (error) {
+          console.error("Error checking auth status:", error);
+          window.location.href = "/";
+        }
+      };
+
+      // Initialize
+      checkAuthStatus();
+
+      // Update the toggleSection function
+      const toggleSection = (sectionId) => {
+        const content = document.getElementById(`${sectionId}Content`);
+        const icon = document.getElementById(`${sectionId}Icon`);
+
+        if (content.classList.contains("collapsed")) {
+          // Expand
+          content.classList.remove("collapsed");
+          content.style.maxHeight = content.scrollHeight + "px";
+          icon.style.transform = "rotate(180deg)";
+        } else {
+          // Collapse
+          content.classList.add("collapsed");
+          content.style.maxHeight = "0";
+          icon.style.transform = "rotate(0deg)";
+        }
+      };
+
+      // Initialize sections as expanded
+      document.addEventListener("DOMContentLoaded", () => {
+        const sections = [
+          "topTracksSection",
+          "topArtistsSection",
+          "playlistsSection",
+        ];
+        sections.forEach((sectionId) => {
+          const content = document.getElementById(`${sectionId}Content`);
+          const icon = document.getElementById(`${sectionId}Icon`);
+          content.style.maxHeight = content.scrollHeight + "px";
+          icon.style.transform = "rotate(180deg)";
+        });
+      });
+
+      // Update the content sections to include the collapsed class
+      const updateContentSections = () => {
+        const sections = [
+          "topTracksSection",
+          "topArtistsSection",
+          "playlistsSection",
+        ];
+        sections.forEach((sectionId) => {
+          const content = document.getElementById(`${sectionId}Content`);
+          if (!content.classList.contains("collapsed")) {
+            content.style.maxHeight = content.scrollHeight + "px";
+          }
+        });
+      };
+
+      // Add event listeners to update content height when items are loaded
+      document.getElementById("loadTopTracks").addEventListener("click", () => {
+        setTimeout(updateContentSections, 100);
+      });
+
+      document
+        .getElementById("loadTopArtists")
+        .addEventListener("click", () => {
+          setTimeout(updateContentSections, 100);
+        });
+
+      document.getElementById("loadPlaylists").addEventListener("click", () => {
+        setTimeout(updateContentSections, 100);
+      });
+    </script>
+  </body>
+</html>

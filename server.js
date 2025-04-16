@@ -6,18 +6,37 @@ const path = require("path");
 const querystring = require("querystring");
 const SpotifyWebApi = require("spotify-web-api-node");
 
+// Import routes
+const apiRoutes = require("./routes/api");
+const authRoutes = require("./routes/auth");
+
 const app = express();
 
 // Middleware
+app.use(express.json());
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, "public")));
+
+// CORS configuration
 app.use(
   cors({
     origin: "http://localhost:3000",
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error("Global error handler:", err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
+// Log all requests
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log("Cookies:", req.cookies);
+  next();
+});
 
 // Initialize Spotify API
 const spotifyApi = new SpotifyWebApi({
@@ -40,7 +59,8 @@ function generateRandomString(length) {
 // Login route
 app.get("/login", (req, res) => {
   const state = generateRandomString(16);
-  const scope = "user-read-private user-read-email";
+  const scope =
+    "user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private";
 
   res.redirect(
     "https://accounts.spotify.com/authorize?" +
@@ -72,10 +92,23 @@ app.get("/callback", async (req, res) => {
     const data = await spotifyApi.authorizationCodeGrant(code);
     const { access_token, refresh_token } = data.body;
 
-    res.cookie("access_token", access_token, { httpOnly: true });
-    res.cookie("refresh_token", refresh_token, { httpOnly: true });
+    res.cookie("access_token", access_token, {
+      httpOnly: true,
+      secure: false, // Set to false for local development
+      sameSite: "lax",
+      maxAge: 3600000, // 1 hour
+      path: "/",
+    });
+    res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: false, // Set to false for local development
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
 
-    res.redirect("/");
+    // Redirect to dashboard instead of home page
+    res.redirect("/dashboard");
   } catch (error) {
     console.error("Error getting tokens:", error);
     res.redirect(
@@ -87,12 +120,38 @@ app.get("/callback", async (req, res) => {
   }
 });
 
+// Mount routes
+app.use("/api", apiRoutes);
+app.use("/auth", authRoutes);
+
 // Root route
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+app.get("/", async (req, res) => {
+  try {
+    const accessToken = req.cookies.access_token;
+    const refreshToken = req.cookies.refresh_token;
+
+    if (accessToken && refreshToken) {
+      res.redirect("/dashboard");
+    } else {
+      res.sendFile(path.join(__dirname, "public", "index.html"));
+    }
+  } catch (error) {
+    console.error("Error in root route:", error);
+    res.sendFile(path.join(__dirname, "public", "index.html"));
+  }
+});
+
+// Dashboard route
+app.get("/dashboard", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "dashboard.html"));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log("Environment variables:", {
+    CLIENT_ID: process.env.CLIENT_ID ? "Set" : "Not set",
+    CLIENT_SECRET: process.env.CLIENT_SECRET ? "Set" : "Not set",
+    REDIRECT_URI: process.env.REDIRECT_URI ? "Set" : "Not set",
+  });
 });

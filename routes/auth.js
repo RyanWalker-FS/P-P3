@@ -21,41 +21,50 @@ function generateRandomString(length) {
   return text;
 }
 
-// Login route - redirects to Spotify authorization
+// Login route
 router.get("/login", (req, res) => {
   const state = generateRandomString(16);
   const scope =
     "user-read-private user-read-email user-read-playback-state user-modify-playback-state user-read-currently-playing user-read-recently-played user-top-read playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private";
 
-  res.redirect(
+  // Set state cookie
+  res.cookie("spotify_auth_state", state, {
+    httpOnly: true,
+    secure: false, // Set to false for local development
+    sameSite: "lax",
+    maxAge: 60 * 60 * 1000, // 1 hour
+    path: "/",
+  });
+
+  const authUrl =
     "https://accounts.spotify.com/authorize?" +
-      querystring.stringify({
-        response_type: "code",
-        client_id: process.env.CLIENT_ID,
-        scope: scope,
-        redirect_uri: process.env.REDIRECT_URI,
-        state: state,
-      })
-  );
+    querystring.stringify({
+      response_type: "code",
+      client_id: process.env.CLIENT_ID,
+      scope: scope,
+      redirect_uri: process.env.REDIRECT_URI,
+      state: state,
+      show_dialog: true, // This will force the consent dialog to show every time
+    });
+
+  console.log("Redirecting to Spotify auth URL:", authUrl);
+  res.redirect(authUrl);
 });
 
-// Callback route - handles the redirect from Spotify
+// Callback route
 router.get("/callback", async (req, res) => {
   const code = req.query.code || null;
   const state = req.query.state || null;
-  const error = req.query.error || null;
+  const storedState = req.cookies.spotify_auth_state;
 
-  if (error) {
-    console.error("Spotify auth error:", error);
-    return res.redirect(
-      "/#" +
-        querystring.stringify({
-          error: error,
-        })
-    );
-  }
+  console.log("Received callback with:", {
+    code: code ? "Present" : "Missing",
+    state: state ? "Present" : "Missing",
+    storedState: storedState ? "Present" : "Missing",
+  });
 
-  if (state === null) {
+  if (state === null || state !== storedState) {
+    console.error("State mismatch:", { state, storedState });
     return res.redirect(
       "/#" +
         querystring.stringify({
@@ -64,32 +73,48 @@ router.get("/callback", async (req, res) => {
     );
   }
 
+  // Clear the state cookie
+  res.clearCookie("spotify_auth_state");
+
   try {
     const data = await spotifyApi.authorizationCodeGrant(code);
     const { access_token, refresh_token, expires_in } = data.body;
 
-    // Set cookies
-    res.cookie("access_token", access_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: expires_in * 1000, // Convert to milliseconds
-    });
-    res.cookie("refresh_token", refresh_token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+    console.log("Token exchange successful:", {
+      access_token: access_token ? "Present" : "Missing",
+      refresh_token: refresh_token ? "Present" : "Missing",
+      expires_in,
     });
 
-    // Redirect to frontend with tokens
-    res.redirect(
-      "/#" +
-        querystring.stringify({
-          access_token: access_token,
-          refresh_token: refresh_token,
-          expires_in: expires_in,
-        })
-    );
+    // Clear existing cookies
+    res.clearCookie("access_token");
+    res.clearCookie("refresh_token");
+
+    // Set new cookies
+    res.cookie("access_token", access_token, {
+      httpOnly: true,
+      secure: false, // Set to false for local development
+      sameSite: "lax",
+      maxAge: expires_in * 1000,
+      path: "/",
+    });
+
+    res.cookie("refresh_token", refresh_token, {
+      httpOnly: true,
+      secure: false, // Set to false for local development
+      sameSite: "lax",
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+      path: "/",
+    });
+
+    // Set the tokens on the Spotify API instance
+    spotifyApi.setAccessToken(access_token);
+    spotifyApi.setRefreshToken(refresh_token);
+
+    // Redirect to dashboard
+    res.redirect("/dashboard");
   } catch (error) {
-    console.error("Error getting tokens:", error);
+    console.error("Error in callback:", error);
     res.redirect(
       "/#" +
         querystring.stringify({
@@ -100,7 +125,7 @@ router.get("/callback", async (req, res) => {
 });
 
 // Refresh token route
-router.get("/refresh_token", async (req, res) => {
+router.get("/refresh", async (req, res) => {
   const refresh_token = req.cookies.refresh_token;
 
   if (!refresh_token) {
@@ -111,17 +136,23 @@ router.get("/refresh_token", async (req, res) => {
     spotifyApi.setRefreshToken(refresh_token);
     const data = await spotifyApi.refreshAccessToken();
     const access_token = data.body.access_token;
-    const expires_in = data.body.expires_in;
 
+    // Update the access token cookie
     res.cookie("access_token", access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: expires_in * 1000,
+      secure: false, // Set to false for local development
+      sameSite: "lax",
+      maxAge: data.body.expires_in * 1000,
+      path: "/",
     });
-    res.json({ access_token, expires_in });
+
+    // Set the new access token
+    spotifyApi.setAccessToken(access_token);
+
+    res.json({ access_token });
   } catch (error) {
     console.error("Error refreshing token:", error);
-    res.status(500).json({ error: "Failed to refresh token" });
+    res.status(401).json({ error: "Invalid refresh token" });
   }
 });
 
