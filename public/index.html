@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify App</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #1db954;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
+      .login-button {
+        background-color: #1db954;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-size: 16px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 20px;
+      }
+      .login-button:hover {
+        background-color: #1ed760;
+      }
+      .error-message {
+        color: red;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to Spotify App</h1>
+      <p>Click the button below to login with your Spotify account</p>
+      <a href="/login" class="login-button">Login with Spotify</a>
+      <div id="error" class="error-message"></div>
+    </div>
+
+    <script>
+      // Check for error in URL hash
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const error = params.get("error");
+
+      if (error) {
+        document.getElementById("error").textContent = `Error: ${error}`;
+      }
+    </script>
+  </body>
+</html>
