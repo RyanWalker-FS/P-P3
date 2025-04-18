@@ -6,6 +6,8 @@ const path = require("path");
 const querystring = require("querystring");
 const SpotifyWebApi = require("spotify-web-api-node");
 
+// Redirect URI
+const redirectUri = "http://localhost:3000/callback";
 // Import routes
 const apiRoutes = require("./routes/api");
 const authRoutes = require("./routes/auth");
