@@ -8,11 +8,12 @@
       body {
         font-family: Arial, sans-serif;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #1db954;
+        background-color: #282828;
       }
       .container {
         text-align: center;
@@ -40,9 +41,21 @@
         color: red;
         margin-top: 20px;
       }
+      .mb-8 {
+        font-size: small;
+        width: 320px;
+        margin-bottom: 4px;
+      }
     </style>
   </head>
   <body>
+    <div class="mb-8">
+      <img
+        src="https://storage.googleapis.com/pr-newsroom-wp/1/2018/11/Spotify_Logo_RGB_White.png"
+        alt="Spotify Logo"
+        class="w-16 mb-8"
+      />
+    </div>
     <div class="container">
       <h1>Welcome to Spotify App</h1>
       <p>Click the button below to login with your Spotify account</p>
