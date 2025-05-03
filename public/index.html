@@ -13,26 +13,37 @@
         align-items: center;
         height: 100vh;
         margin: 0;
-        background-color: #282828;
+        background-color: #121212;
       }
       .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         padding: 2rem;
-        background-color: white;
+        color: white;
+        background-color: #282828;
         border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       }
       .login-button {
-        background-color: #1db954;
-        color: white;
+        background-color: #1ed760;
+        color: black;
         border: none;
         padding: 10px 20px;
-        border-radius: 20px;
+        border-radius: 5px;
         cursor: pointer;
         font-size: 16px;
         text-decoration: none;
         display: inline-block;
         margin-top: 20px;
+        width: 320px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 15px;
       }
       .login-button:hover {
         background-color: #1ed760;
@@ -45,6 +56,12 @@
         font-size: small;
         width: 320px;
         margin-bottom: 4px;
+      }
+      .terms {
+        font-size: small;
+        width: 320px;
+        margin-bottom: 4px;
+        color: #b3b3b3;
       }
     </style>
   </head>
@@ -61,6 +78,9 @@
       <p>Click the button below to login with your Spotify account</p>
       <a href="/login" class="login-button">Login with Spotify</a>
       <div id="error" class="error-message"></div>
+      <p class="terms">
+        By signing in, you agree to our Terms of Service and Privacy Policy
+      </p>
     </div>
 
     <script>
